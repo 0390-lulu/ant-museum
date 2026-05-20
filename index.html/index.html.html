@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>蚂蚁王国数字博物馆 | 自动保存·永久珍藏</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #fff3e0 0%, #ffe0b5 100%);
+            font-family: 'Comic Neue', 'Ma Shan Zheng', 'Segoe UI Emoji', cursive, sans-serif;
+            color: #4a3728;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* 可爱头部 */
+        header {
+            text-align: center;
+            padding: 20px 0 10px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, #e76f51, #f4a261);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 3px 3px 0 rgba(255,215,150,0.6);
+            letter-spacing: 2px;
+            animation: gentleBounce 2s infinite ease-in-out;
+            display: inline-block;
+            padding: 0 20px;
+            border-radius: 80px;
+            backdrop-filter: blur(2px);
+        }
+
+        @keyframes gentleBounce {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-6px); }
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: #2a9d8f;
+            margin-top: 12px;
+            font-weight: bold;
+            background: rgba(255,252,225,0.8);
+            display: inline-block;
+            padding: 5px 25px;
+            border-radius: 50px;
+        }
+
+        /* 上传区 */
+        .upload-section {
+            background: rgba(255, 252, 235, 0.9);
+            border-radius: 60px;
+            padding: 20px;
+            margin: 20px 0 35px;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+            text-align: center;
+            backdrop-filter: blur(3px);
+        }
+
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: #e9c46a;
+            color: #3b2a1f;
+            padding: 12px 28px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin: 8px 12px;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 0 #b5835a;
+            border: none;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 9px 0 #b5835a;
+            background: #f2cf7a;
+        }
+
+        .clear-storage-btn {
+            background: #e9a26a;
+            box-shadow: 0 6px 0 #b5622e;
+            margin-left: 10px;
+        }
+
+        .clear-storage-btn:hover {
+            background: #e08242;
+        }
+
+        #fileInput, #videoInput {
+            display: none;
+        }
+
+        /* 画廊网格 */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 950px) {
+            .gallery {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 580px) {
+            .gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 作品卡片 */
+        .art-card {
+            background: #fffdf7;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.1);
+            transition: transform 0.25s ease, box-shadow 0.2s;
+            border: 2px solid #fff1cf;
+        }
+
+        .art-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 22px 32px rgba(0,0,0,0.12);
+        }
+
+        /* 媒体容器 */
+        .media-wrapper {
+            position: relative;
+            aspect-ratio: 4 / 3;
+            background: #f3e9d2;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .media-wrapper img, .media-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s;
+        }
+
+        .media-wrapper:hover img,
+        .media-wrapper:hover video {
+            transform: scale(1.02);
+        }
+
+        /* 删除按钮 */
+        .delete-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(239, 71, 111, 0.9);
+            color: white;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 12;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .delete-btn:hover {
+            background: #e63946;
+            transform: scale(1.1);
+        }
+
+        /* 信息面板 */
+        .info-panel {
+            padding: 14px 16px 16px;
+            background: #ffffffdb;
+            backdrop-filter: blur(2px);
+            border-top: 2px dashed #f4d58c;
+        }
+
+        .owner-area {
+            background: #fff3e2;
+            border-radius: 28px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .owner-label {
+            font-size: 0.85rem;
+            background: #fce6b4;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .owner-name {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #b35f2b;
+            background: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            word-break: break-word;
+            max-width: 160px;
+        }
+
+        .edit-owner-btn, .edit-slogan-btn {
+            background: #e9c46a;
+            border: none;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .slogan-area {
+            margin-bottom: 12px;
+            background: #fff7e8;
+            border-radius: 24px;
+            padding: 10px 12px;
+        }
+
+        .slogan-text {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #4a3b2c;
+            word-break: break-word;
+            font-weight: 500;
+            background: #fff2e0;
+            padding: 8px 10px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .slogan-display {
+            flex: 1;
+            font-size: 0.9rem;
+            color: #6b4c3b;
+        }
+
+        .slogan-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 32px;
+            border: 1.5px solid #ffcd94;
+            font-family: inherit;
+            font-size: 0.85rem;
+            resize: vertical;
+        }
+
+        .slogan-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .save-slogan, .cancel-slogan, .save-owner, .cancel-owner {
+            background: #a7c957;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .cancel-slogan, .cancel-owner {
+            background: #e0afa0;
+        }
+
+        .like-section {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            padding-top: 6px;
+            border-top: 1px solid #ffe1b3;
+            margin-top: 6px;
+        }
+
+        .like-button {
+            background: none;
+            border: none;
+            font-size: 1.9rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #faf3e0;
+            padding: 5px 12px;
+            border-radius: 60px;
+        }
+
+        .like-button span {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #c44536;
+        }
+
+        .like-button:hover {
+            transform: scale(1.07);
+            background: #fff0da;
+        }
+
+        .like-count {
+            font-size: 1.1rem;
+            font-weight: bold;
+            background: #fdf8ed;
+            padding: 5px 12px;
+            border-radius: 40px;
+            color: #bd6b43;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 24px;
+            box-shadow: 0 0 35px rgba(255,235,160,0.4);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 25px;
+            right: 35px;
+            color: white;
+            font-size: 55px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #ffb347;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 65px 25px;
+            color: #7c5f42;
+            font-size: 1.6rem;
+            grid-column: 1 / -1;
+            background: rgba(255,245,215,0.7);
+            border-radius: 70px;
+        }
+
+        .empty-state i {
+            font-size: 5rem;
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .save-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2a9d8fe6;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+            z-index: 99;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 55px;
+            padding: 18px;
+            color: #ad8b6a;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🐜 蚂蚁王国数字博物馆 🏛️</h1>
+        <div class="subtitle">✨ 自动保存 · 永久珍藏你的每一份作品 ✨</div>
+    </header>
+
+    <div class="upload-section">
+        <label for="fileInput" class="upload-btn">
+            <i>🖼️</i> 上传图片
+        </label>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+
+        <label for="videoInput" class="upload-btn">
+            <i>🎬</i> 上传视频
+        </label>
+        <input type="file" id="videoInput" accept="video/*" multiple>
+        
+        <button id="clearAllBtn" class="upload-btn clear-storage-btn" style="background:#d68b5c;">
+            <i>🗑️</i> 清空博物馆
+        </button>
+    </div>
+
+    <div class="gallery" id="gallery">
+        <div class="empty-state">
+            <i>🏛️🐜🍉</i>
+            <p>欢迎来到蚂蚁王国数字博物馆！<br>上传作品会自动保存在你的浏览器中，下次打开依然存在❤️</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>🐜 数据自动保存至本地 | 刷新页面不丢失 | 清空按钮可重置博物馆 🧡</p>
+    </footer>
+</div>
+<div class="save-badge" id="saveHint">💾 所有修改自动保存</div>
+
+<!-- 模态放大查看 -->
+<div class="modal" id="modal">
+    <span class="close-btn" id="closeModal">&times;</span>
+    <img class="modal-content" id="modalImg">
+    <video class="modal-content" id="modalVideo" controls></video>
+</div>
+
+<script>
+    // ---------- 核心功能：带本地存储的媒体库 ----------
+    // 数据结构: { id, src, type, owner, slogan, likes }
+    let mediaItems = [];
+
+    // DOM 元素
+    const fileInput = document.getElementById('fileInput');
+    const videoInput = document.getElementById('videoInput');
+    const gallery = document.getElementById('gallery');
+    const modal = document.getElementById('modal');
+    const modalImg = document.getElementById('modalImg');
+    const modalVideo = document.getElementById('modalVideo');
+    const closeModalBtn = document.getElementById('closeModal');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const saveHint = document.getElementById('saveHint');
+
+    // 辅助函数：保存整个 mediaItems 到 localStorage
+    // 注意：图片/视频的 base64 可能很大，但现代浏览器 localStorage 通常有 5-10MB 限制，适合少量作品。
+    // 为了更好的体验，保存前会进行提示，且支持多作品（最多约 15-20张中等图片）。
+    // 增加异常捕获，超出容量时提醒用户。
+    function persistToLocal() {
+        try {
+            // 深拷贝一份数据用于存储（避免循环引用）
+            const toStore = mediaItems.map(item => ({
+                id: item.id,
+                src: item.src,       // base64 数据
+                type: item.type,
+                owner: item.owner,
+                slogan: item.slogan,
+                likes: item.likes
+            }));
+            const serialized = JSON.stringify(toStore);
+            localStorage.setItem('antMuseumData', serialized);
+            // 显示保存提示闪烁
+            saveHint.style.opacity = '1';
+            saveHint.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                saveHint.style.opacity = '0.7';
+                saveHint.style.transform = 'scale(1)';
+            }, 600);
+        } catch (e) {
+            console.warn('存储失败', e);
+            if (e.name === 'QuotaExceededError') {
+                alert('⚠️ 存储空间不足！你的作品图片/视频总大小超过了浏览器限制(约5-10MB)。\n建议删除部分老作品或压缩图片后再上传。');
+            } else {
+                alert('自动保存失败，请检查浏览器设置。');
+            }
+        }
+    }
+
+    // 从 localStorage 加载数据
+    function loadFromLocal() {
+        const raw = localStorage.getItem('antMuseumData');
+        if (!raw) return [];
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                // 确保每个 item 都有必要字段，并且 likes 为数字
+                return parsed.map(item => ({
+                    ...item,
+                    likes: typeof item.likes === 'number' ? item.likes : 0,
+                    slogan: item.slogan || '🏛️ 蚂蚁王国的数字宝藏，期待你的点赞！🍉',
+                    owner: item.owner || '蚂蚁王国访客'
+                }));
+            }
+        } catch (e) { console.warn('解析存储失败', e); }
+        return [];
+    }
+
+    // 渲染整个画廊 (并且每次渲染后自动保存)
+    function renderGallery() {
+        gallery.innerHTML = '';
+        if (mediaItems.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'empty-state';
+            emptyDiv.innerHTML = `
+                <i>🏛️🐜🍉</i>
+                <p>欢迎来到蚂蚁王国数字博物馆！<br>上传作品会自动保存在你的浏览器中，下次打开依然存在❤️</p>
+            `;
+            gallery.appendChild(emptyDiv);
+            persistToLocal(); // 空状态也更新存储（清除数据后）
+            return;
+        }
+
+        mediaItems.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'art-card';
+            card.dataset.id = item.id;
+
+            // 媒体区域
+            const mediaWrapper = document.createElement('div');
+            mediaWrapper.className = 'media-wrapper';
+
+            if (item.type === 'image') {
+                const img = document.createElement('img');
+                img.src = item.src;
+                img.alt = '数字博物馆藏品';
+                img.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openModal(item);
+                });
+                mediaWrapper.appendChild(img);
+            } else {
+                const video = document.createElement('video');
+                video.src = item.src;
+                video.muted = true;
+                video.playsInline = true;
+                video.addEventListener('loadeddata', () => {
+                    video.currentTime = 0.1;
+                });
+                video.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openModal(item);
+                });
+                mediaWrapper.appendChild(video);
+            }
+
+            // 删除按钮
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-btn';
+            delBtn.innerHTML = '✕';
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteMediaItem(item.id);
+            });
+            mediaWrapper.appendChild(delBtn);
+
+            // 信息面板
+            const infoPanel = document.createElement('div');
+            infoPanel.className = 'info-panel';
+
+            // 1. 上传者姓名区域
+            const ownerArea = document.createElement('div');
+            ownerArea.className = 'owner-area';
+            const currentOwner = item.owner && item.owner.trim() !== "" ? item.owner : "蚂蚁王国访客";
+
+            const ownerLabelSpan = document.createElement('span');
+            ownerLabelSpan.className = 'owner-label';
+            ownerLabelSpan.innerHTML = '🐜 上传者：';
+            const ownerNameSpan = document.createElement('span');
+            ownerNameSpan.className = 'owner-name';
+            ownerNameSpan.innerText = currentOwner;
+            const editOwnerBtn = document.createElement('button');
+            editOwnerBtn.innerText = '✏️ 修改姓名';
+            editOwnerBtn.className = 'edit-owner-btn';
+
+            ownerArea.appendChild(ownerLabelSpan);
+            ownerArea.appendChild(ownerNameSpan);
+            ownerArea.appendChild(editOwnerBtn);
+
+            // 修改姓名逻辑
+            function enterEditOwnerMode() {
+                ownerArea.innerHTML = '';
+                const editContainer = document.createElement('div');
+                editContainer.style.width = '100%';
+                const ownerInput = document.createElement('input');
+                ownerInput.type = 'text';
+                ownerInput.placeholder = '输入你的名字 (昵称/真实姓名)';
+                ownerInput.maxLength = 20;
+                ownerInput.value = (item.owner && item.owner !== "蚂蚁王国访客") ? item.owner : '';
+                ownerInput.style.width = '100%';
+                ownerInput.style.padding = '8px 12px';
+                ownerInput.style.borderRadius = '40px';
+                ownerInput.style.border = '1px solid #ffcd94';
+                ownerInput.style.fontFamily = 'inherit';
+                
+                const btnGroup = document.createElement('div');
+                btnGroup.className = 'slogan-actions';
+                const saveOwner = document.createElement('button');
+                saveOwner.innerText = '💾 保存';
+                saveOwner.className = 'save-owner';
+                const cancelOwner = document.createElement('button');
+                cancelOwner.innerText = '取消';
+                cancelOwner.className = 'cancel-owner';
+                btnGroup.appendChild(saveOwner);
+                btnGroup.appendChild(cancelOwner);
+                
+                editContainer.appendChild(ownerInput);
+                editContainer.appendChild(btnGroup);
+                ownerArea.appendChild(editContainer);
+                
+                saveOwner.addEventListener('click', () => {
+                    let newOwner = ownerInput.value.trim();
+                    if (newOwner === "") newOwner = "蚂蚁王国访客";
+                    item.owner = newOwner;
+                    renderGallery();  // 重新渲染同时保存
+                });
+                cancelOwner.addEventListener('click', () => {
+                    renderGallery();
+                });
+            }
+            editOwnerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                enterEditOwnerMode();
+            });
+
+            // 2. 广告语区域
+            const sloganArea = document.createElement('div');
+            sloganArea.className = 'slogan-area';
+            const currentSlogan = item.slogan || '🏛️ 蚂蚁王国的数字宝藏，期待你的点赞与留言！🍉';
+
+            const sloganTextDiv = document.createElement('div');
+            sloganTextDiv.className = 'slogan-text';
+            const displaySpan = document.createElement('span');
+            displaySpan.className = 'slogan-display';
+            displaySpan.innerText = currentSlogan;
+            const editSloganBtn = document.createElement('button');
+            editSloganBtn.innerText = '✏️ 编辑广告语';
+            editSloganBtn.className = 'edit-slogan-btn';
+
+            sloganTextDiv.appendChild(displaySpan);
+            sloganTextDiv.appendChild(editSloganBtn);
+            sloganArea.appendChild(sloganTextDiv);
+
+            function enterSloganEditMode() {
+                sloganArea.innerHTML = '';
+                const editorDiv = document.createElement('div');
+                const textarea = document.createElement('textarea');
+                textarea.className = 'slogan-input';
+                textarea.maxLength = 60;
+                textarea.rows = 2;
+                textarea.placeholder = '写一段60字以内的广告语/介绍 (最多60字)';
+                textarea.value = item.slogan || '';
+
+                const counterSpan = document.createElement('div');
+                counterSpan.style.fontSize = '0.7rem';
+                counterSpan.style.textAlign = 'right';
+                counterSpan.style.color = '#b9814e';
+                counterSpan.style.marginTop = '4px';
+                const updateCounter = () => {
+                    const len = textarea.value.length;
+                    counterSpan.innerText = `${len}/60`;
+                    if (len > 60) counterSpan.style.color = '#e63946';
+                    else counterSpan.style.color = '#2a9d8f';
+                };
+                textarea.addEventListener('input', updateCounter);
+                updateCounter();
+
+                const btnGroup = document.createElement('div');
+                btnGroup.className = 'slogan-actions';
+                const saveBtn = document.createElement('button');
+                saveBtn.innerText = '💾 保存广告语';
+                saveBtn.className = 'save-slogan';
+                const cancelBtn = document.createElement('button');
+                cancelBtn.innerText = '取消';
+                cancelBtn.className = 'cancel-slogan';
+
+                btnGroup.appendChild(saveBtn);
+                btnGroup.appendChild(cancelBtn);
+                editorDiv.appendChild(textarea);
+                editorDiv.appendChild(counterSpan);
+                editorDiv.appendChild(btnGroup);
+                sloganArea.appendChild(editorDiv);
+
+                saveBtn.addEventListener('click', () => {
+                    let newSlogan = textarea.value.trim();
+                    if (newSlogan === "") newSlogan = "🐜 蚂蚁数字博物馆 · 奇妙藏品 ✨";
+                    if (newSlogan.length > 60) {
+                        alert("广告语不能超过60个字噢！请精简到60字以内～");
+                        return;
+                    }
+                    item.slogan = newSlogan;
+                    renderGallery();
+                });
+                cancelBtn.addEventListener('click', () => {
+                    renderGallery();
+                });
+            }
+            editSloganBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                enterSloganEditMode();
+            });
+
+            // 3. 点赞区域
+            const likeSection = document.createElement('div');
+            likeSection.className = 'like-section';
+            const likeBtn = document.createElement('button');
+            likeBtn.className = 'like-button';
+            likeBtn.innerHTML = `❤️ <span>点赞</span>`;
+            const likeCountSpan = document.createElement('span');
+            likeCountSpan.className = 'like-count';
+            if (typeof item.likes !== 'number') item.likes = 0;
+            likeCountSpan.innerText = `${item.likes} 赞`;
+
+            likeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                item.likes = (item.likes || 0) + 1;
+                likeCountSpan.innerText = `${item.likes} 赞`;
+                likeBtn.style.transform = 'scale(1.15)';
+                setTimeout(() => { if (likeBtn) likeBtn.style.transform = ''; }, 180);
+                // 点赞后立即保存
+                persistToLocal();
+            });
+
+            likeSection.appendChild(likeBtn);
+            likeSection.appendChild(likeCountSpan);
+
+            infoPanel.appendChild(ownerArea);
+            infoPanel.appendChild(sloganArea);
+            infoPanel.appendChild(likeSection);
+
+            card.appendChild(mediaWrapper);
+            card.appendChild(infoPanel);
+            gallery.appendChild(card);
+        });
+        
+        // 每次渲染完成都保存状态 (确保删除、修改姓名、修改广告语后都会保存)
+        persistToLocal();
+    }
+
+    // 删除作品
+    function deleteMediaItem(id) {
+        mediaItems = mediaItems.filter(item => item.id !== id);
+        renderGallery();
+    }
+
+    // 清空全部（带二次确认）
+    function clearAllMuseum() {
+        const confirmClear = confirm('⚠️ 确定要清空整个蚂蚁王国数字博物馆吗？所有作品、点赞、广告语将永久删除，且不可恢复。');
+        if (confirmClear) {
+            mediaItems = [];
+            localStorage.removeItem('antMuseumData');
+            renderGallery();
+        }
+    }
+
+    // 打开模态放大
+    function openModal(item) {
+        if (item.type === 'image') {
+            modalImg.src = item.src;
+            modalImg.style.display = 'block';
+            modalVideo.style.display = 'none';
+        } else {
+            modalVideo.src = item.src;
+            modalVideo.style.display = 'block';
+            modalImg.style.display = 'none';
+            modalVideo.pause();
+        }
+        modal.style.display = 'flex';
+    }
+
+    function closeModalFunc() {
+        modal.style.display = 'none';
+        if (modalVideo) modalVideo.pause();
+    }
+    closeModalBtn.addEventListener('click', closeModalFunc);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModalFunc();
+    });
+
+    // 上传辅助：询问姓名后添加作品，自动保存
+    function promptForOwnerAndAdd(file, type) {
+        let userName = prompt("✨ 请填写你的上传者姓名（昵称/真实姓名）✨\n（可留空，将显示为“蚂蚁王国访客”）", "");
+        if (userName === null) userName = "";
+        const finalOwner = userName.trim() === "" ? "蚂蚁王国访客" : userName.trim().substring(0, 20);
+        
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const newItem = {
+                id: Date.now() + Math.random() * 10000,
+                src: ev.target.result,
+                type: type,
+                owner: finalOwner,
+                slogan: "🏛️ 蚂蚁王国数字博物馆 · 新藏品 | 欢迎点赞&寄语 🐜🍉",
+                likes: 0
+            };
+            mediaItems.push(newItem);
+            renderGallery();  // 渲染并自动存储
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // 图片上传（批量，每个独立姓名）
+    fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        let idx = 0;
+        function processImage() {
+            if (idx >= files.length) {
+                fileInput.value = '';
+                return;
+            }
+            const file = files[idx];
+            if (file.type.startsWith('image/')) {
+                promptForOwnerAndAdd(file, 'image');
+                idx++;
+                processImage();
+            } else {
+                alert(`「${file.name}」不是图片格式，跳过`);
+                idx++;
+                processImage();
+            }
+        }
+        processImage();
+    });
+
+    // 视频上传（批量，每个独立姓名）
+    videoInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        let idx = 0;
+        function processVideo() {
+            if (idx >= files.length) {
+                videoInput.value = '';
+                return;
+            }
+            const file = files[idx];
+            if (file.type.startsWith('video/')) {
+                promptForOwnerAndAdd(file, 'video');
+                idx++;
+                processVideo();
+            } else {
+                alert(`「${file.name}」不是视频格式，跳过`);
+                idx++;
+                processVideo();
+            }
+        }
+        processVideo();
+    });
+
+    // 清空按钮事件
+    clearAllBtn.addEventListener('click', clearAllMuseum);
+
+    // ---------- 初始化：加载已有数据 ----------
+    mediaItems = loadFromLocal();
+    renderGallery();
+    
+    // 额外监听页面关闭前确保存储（其实每次渲染都会存，非常安全）
+    window.addEventListener('beforeunload', () => {
+        persistToLocal();
+    });
+</script>
+</body>
+</html>
